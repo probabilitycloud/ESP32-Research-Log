@@ -1,0 +1,9 @@
+# ignore hided file
+.*
+
+# bud not .gitignore
+!.gitignore
+
+# auto generated file
+**/build
+
