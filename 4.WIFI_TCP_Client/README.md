@@ -1,7 +1,7 @@
 | Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
 | ----------------- | ----- | -------- | -------- | -------- | -------- |
 
-# Wi-Fi Station Example
+# Wi-Fi Station And TCP Client Connet Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
@@ -15,12 +15,16 @@ Open the project configuration menu (`idf.py menuconfig`).
 
 In the `Example Configuration` menu:
 
-* Set the Wi-Fi configuration.
+* Set the configuration.
     * Set `WiFi SSID`.
     * Set `WiFi Password`.
+    * Set `CONFIG_EXAMPLE_IPV4/CONFIG_EXAMPLE_IPV6`.
+    * Set `HOST_IP_ADDR`.
+    * Set `PORT`.
 
 Optional: If you need, change the other options according to your requirements.
-
+### Note
+**If you want ESP32 connect to TCP as a Client, Please prepare a TCP_Server on your Device first.**
 ### Build and Flash
 
 Build the project and flash it to the board, then run the monitor tool to view the serial output:
@@ -116,6 +120,28 @@ I (10299) wifi station: connect to the AP fail
 I (10299) wifi station: Failed to connect to SSID:myssid, password:mypassword
 ```
 
+Console output if the station connect to TCP_Server:
+```
+I (522) wifi:new:<1,0>, old:<1,0>, ap:<255,255>, sta:<1,0>, prof:11
+I (522) wifi:state: init -> auth (b0)
+I (582) wifi:state: auth -> assoc (0)
+I (612) wifi:state: assoc -> run (10)
+I (792) wifi:connected with Hosmart, aid = 1, channel 1, BW20, bssid = 54:66:6c:d3:37:fc
+I (792) wifi:security: WPA2-PSK, phy: bgn, rssi: -51
+I (792) wifi:pm start, type: 1
+
+I (802) wifi:set rx beacon pti, rx_bcn_pti: 0, bcn_timeout: 0, mt_pti: 25000, mt_time: 10000
+I (832) wifi:BcnInt:102400, DTIM:1
+W (1002) wifi:<ba-add>idx:0 (ifx:0, 54:66:6c:d3:37:fc), tid:0, ssn:2, winSize:64
+I (1852) esp_netif_handlers: sta ip: 192.168.0.7, mask: 255.255.255.0, gw: 192.168.0.1
+I (1852) ESP32C3: got ip:192.168.0.7
+I (1852) ESP32C3: connected to ap SSID:your ID password:Your Pass
+I (1852) ESP32C3: TCP_Sock_Connecting
+I (1862) ESP32C3: sock:54
+I (1862) ESP32C3: Socket created, connecting to 192.168.0.10:8080
+I (1912) ESP32C3: err:0
+I (1912) ESP32C3: Successfully connected
+```
 ## Troubleshooting
 
 For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.

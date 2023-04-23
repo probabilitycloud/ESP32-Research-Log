@@ -28,9 +28,16 @@
    If you'd rather not, just change the below entries to strings with
    the config you want - ie #define EXAMPLE_WIFI_SSID "mywifissid"
 */
-#define EXAMPLE_ESP_WIFI_SSID      CONFIG_ESP_WIFI_SSID
-#define EXAMPLE_ESP_WIFI_PASS      CONFIG_ESP_WIFI_PASSWORD
+#define EXAMPLE_ESP_WIFI_SSID      "YOUR SSID"
+//#define EXAMPLE_ESP_WIFI_SSID      Hosmart
+#define EXAMPLE_ESP_WIFI_PASS      "YOUR PASSWORD"
+//#define EXAMPLE_ESP_WIFI_PASS      Hosmart888!@
 #define EXAMPLE_ESP_MAXIMUM_RETRY  CONFIG_ESP_MAXIMUM_RETRY
+//定义网络协议和端口 启用IPV4
+#define CONFIG_EXAMPLE_IPV4 1
+#define CONFIG_EXAMPLE_IPV6 0
+#define HOST_IP_ADDR "192.168.0.10"
+#define PORT 8080
 
 #if CONFIG_ESP_WIFI_AUTH_OPEN
 #define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_OPEN
@@ -59,18 +66,6 @@ static EventGroupHandle_t s_wifi_event_group;
 #define WIFI_CONNECTED_BIT BIT0
 #define WIFI_FAIL_BIT      BIT1
 
-/*网络协议设置*/
-#if defined(CONFIG_EXAMPLE_IPV4)
-#define HOST_IP_ADDR CONFIG_EXAMPLE_IPV4_ADDR
-#elif defined(CONFIG_EXAMPLE_IPV6)
-#define HOST_IP_ADDR CONFIG_EXAMPLE_IPV6_ADDR
-#else
-#define HOST_IP_ADDR ""
-#endif
-
-#define PORT CONFIG_EXAMPLE_PORT
-
-
 
 static const char *TAG = "ESP32C3";
 static const char *payload = "Message from ESP32 ";
@@ -78,13 +73,14 @@ static const char *payload = "Message from ESP32 ";
 static int s_retry_num = 0;
 
 TaskHandle_t TCP_TASK;
+
 /**
  * @description: 事件处理循环函数
- * @param 
- * void*            arg         表示传递给Handler函数的参数 在register函数里声明
- * esp_event_base_t event_base  表示事件基  参照esp_event_handler_instance_register函数
- * int32_t          event_id    表示事件ID
- * void*            event_data  表示传递给这个事件的数据
+ * @brief event_handler处理事件
+ * @param void*            arg         表示传递给Handler函数的参数 在register函数里声明
+ * @param esp_event_base_t event_base  表示事件基  参照esp_event_handler_instance_register函数
+ * @param int32_t          event_id    表示事件ID
+ * @param void*            event_data  表示传递给这个事件的数据
  * @return {*}
  */
 static void event_handler(void* arg, esp_event_base_t event_base,
@@ -115,6 +111,12 @@ static void event_handler(void* arg, esp_event_base_t event_base,
 
 }
 
+/**
+ * @description: 尝试作为Client端连接Server端,建立通信
+ * @brief TCP_Client的任务函数
+ * @param {void*} arg
+ * @return {*}
+ */
 void tcp_client_task(void* arg)
 {
     EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group,
@@ -129,7 +131,7 @@ void tcp_client_task(void* arg)
 
     while(1)
     {
-
+        ESP_LOGI(TAG, "TCP_Sock_Connecting");
 //在IPv4和IPv6等不同网络环境下的一些配置定义
 #if defined(CONFIG_EXAMPLE_IPV4)
         struct sockaddr_in dest_addr;
@@ -153,12 +155,14 @@ void tcp_client_task(void* arg)
 
         /**
          * @description: 
+         * @brief socket函数介绍
          * @param domain    AF_ANET表示IPv4 AN_ANET6表示IPv6
          * @param type      SOCK_STREAM表示TCP SOCK_DGRAM表示UDP SOCK_RAW表示RAW
          * @param protocol  IPPROTO_IP IPPROTO_UDP IPPROTO_UDPLITE IPPROTO_ICMP
          * @return {*}
          */
         int sock = socket(addr_family,SOCK_STREAM,ip_protocol);
+        ESP_LOGI(TAG,"sock:%d",sock);
         if (sock < 0) {
             ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
             break;
@@ -166,6 +170,9 @@ void tcp_client_task(void* arg)
         ESP_LOGI(TAG, "Socket created, connecting to %s:%d", host_ip, PORT);
         //配置连接参数并连接至服务端
         int err = connect(sock, (struct sockaddr *)&dest_addr, sizeof(struct sockaddr_in6));
+
+        ESP_LOGE(TAG,"err:%d",err);
+
         if (err != 0) {
             ESP_LOGE(TAG, "Socket unable to connect: errno %d", errno);
             break;
@@ -301,11 +308,9 @@ void app_main(void)
       ESP_ERROR_CHECK(nvs_flash_erase());
       ret = nvs_flash_init();
     }
-    
-    //启动TCP_Client
-    xTaskCreate(tcp_client_task, "tcp_client", 4096, NULL, 5, &TCP_TASK);
-    
     ESP_ERROR_CHECK(ret);
     ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
     wifi_init_sta();
+    //启动TCP_Client
+    xTaskCreate(tcp_client_task, "tcp_client", 2048, NULL, 5, &TCP_TASK);
 }
